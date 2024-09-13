@@ -17,8 +17,8 @@ class MyApp extends StatelessWidget {
     return MultiBlocProvider(
       providers: [
         BlocProvider<ProductBloc>(
-          create: (context) =>
-              di.locator<ProductBloc>()..add(ProductsLoadEvent()),
+          create: (context) => di.locator<ProductBloc>()
+            ..add(ProductsLoadEvent(page: 1, pageSize: 5)),
         ),
       ],
       child: MaterialApp(

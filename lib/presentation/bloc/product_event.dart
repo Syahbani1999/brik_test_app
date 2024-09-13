@@ -7,7 +7,12 @@ abstract class ProductEvent extends Equatable {
   List<Object?> get props => [];
 }
 
-class ProductsLoadEvent extends ProductEvent {}
+class ProductsLoadEvent extends ProductEvent {
+  final int page;
+  final int pageSize;
+
+  ProductsLoadEvent({required this.page, required this.pageSize});
+}
 
 class ProductAddEvent extends ProductEvent {
   final Product product;
@@ -30,4 +35,10 @@ class ProductDeleteEvent extends ProductEvent {
 
   @override
   List<Object?> get props => [productId];
+}
+
+class SearchProductsEvent extends ProductEvent {
+  final String query;
+
+  SearchProductsEvent(this.query);
 }

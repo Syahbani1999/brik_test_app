@@ -17,12 +17,54 @@ class ProductsPage extends StatefulWidget {
 }
 
 class _ProductsPageState extends State<ProductsPage> {
+  final _searchController = TextEditingController();
+
   bool isTable = true;
+  int _currentPage = 1;
+  final int _pageSize = 5;
+
+  void _loadProducts() {
+    BlocProvider.of<ProductBloc>(context)
+        .add(ProductsLoadEvent(page: _currentPage, pageSize: _pageSize));
+  }
+
+  void _nextPage() {
+    setState(() {
+      _currentPage++;
+    });
+    _loadProducts();
+  }
+
+  void _prevPage() {
+    if (_currentPage > 1) {
+      setState(() {
+        _currentPage--;
+      });
+      _loadProducts();
+    }
+  }
 
   void changeMenu() {
     setState(() {
       isTable = !isTable;
     });
+  }
+
+  void _searchProducts(String query) {
+    BlocProvider.of<ProductBloc>(context).add(SearchProductsEvent(query));
+  }
+
+  void _deleteSearch() {
+    setState(() {
+      _searchController.clear();
+    });
+    BlocProvider.of<ProductBloc>(context)
+        .add(ProductsLoadEvent(page: 1, pageSize: 5));
+  }
+
+  @override
+  void initState() {
+    super.initState();
   }
 
   @override
@@ -37,6 +79,32 @@ class _ProductsPageState extends State<ProductsPage> {
                 },
                 icon: Icon(Icons.change_circle_outlined)),
           ],
+        ),
+        bottomNavigationBar: Container(
+          padding: EdgeInsets.symmetric(vertical: 10, horizontal: 20),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              if (_currentPage > 1)
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () {
+                      _prevPage();
+                    },
+                    child: Text('Prev'),
+                  ),
+                ),
+              if (_currentPage > 1) SizedBox(width: 10),
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: () {
+                    _nextPage();
+                  },
+                  child: Text('Next'),
+                ),
+              ),
+            ],
+          ),
         ),
         floatingActionButton: FloatingActionButton(
           onPressed: () async {
@@ -76,14 +144,19 @@ class _ProductsPageState extends State<ProductsPage> {
                   Padding(
                     padding: const EdgeInsets.all(8.0),
                     child: TextFormField(
+                      controller: _searchController,
                       decoration: InputDecoration(
-                          border: OutlineInputBorder(
-                              borderSide: BorderSide(color: Colors.blue),
-                              borderRadius: BorderRadius.circular(12)),
-                          labelText: 'Cari Produk',
-                          prefixIcon: Icon(Icons.search),
-                          suffixIcon: IconButton(
-                              onPressed: () {}, icon: Icon(Icons.close))),
+                        border: OutlineInputBorder(
+                            borderSide: BorderSide(color: Colors.blue),
+                            borderRadius: BorderRadius.circular(12)),
+                        labelText: 'Cari Produk',
+                        prefixIcon: Icon(Icons.search),
+                        suffixIcon: IconButton(
+                            onPressed: _deleteSearch, icon: Icon(Icons.close)),
+                      ),
+                      onEditingComplete: () {
+                        _searchProducts(_searchController.text);
+                      },
                     ),
                   ),
                   isTable
@@ -137,7 +210,7 @@ class _ProductsPageState extends State<ProductsPage> {
                                                     );
                                                   },
                                                   child: Icon(Icons.edit)),
-                                              SizedBox(width: 10),
+                                              SizedBox(width: 5),
                                               InkWell(
                                                   onTap: () {
                                                     showDialog(
@@ -202,7 +275,7 @@ class _ProductsPageState extends State<ProductsPage> {
                           child: RefreshIndicator(
                             onRefresh: () async {
                               BlocProvider.of<ProductBloc>(context)
-                                  .add(ProductsLoadEvent());
+                                  .add(ProductsLoadEvent(page: 1, pageSize: 5));
                               return Future.value();
                             },
                             child: GridView.builder(

@@ -14,12 +14,21 @@ class ProductRepositoryImpl implements ProductRepository {
   ProductRepositoryImpl({required this.remoteDataSource});
 
   @override
-  Future<Either<Failure, List<Product>>> getProducts() async {
+  Future<Either<Failure, List<Product>>> getProducts(
+      int page, int pageSize) async {
     // TODO: implement getCurrentWeather
     try {
       final result = await remoteDataSource.getProducts();
-      return Right(
-          (result as List<ProductModel>).map((model) => model).toList());
+      // Calculate start and end index for pagination
+      final startIndex = (page - 1) * pageSize;
+      final endIndex = startIndex + pageSize;
+
+      // Paginate the products
+      final paginatedProducts = result.sublist(
+        startIndex,
+        endIndex > result.length ? result.length : endIndex,
+      );
+      return Right(paginatedProducts);
     } on ServerException {
       return const Left(ServerFailure(''));
     } on SocketException {
@@ -54,6 +63,25 @@ class ProductRepositoryImpl implements ProductRepository {
       return const Right(null);
     } catch (error) {
       return Left(ServerFailure('Failed to delete product'));
+    }
+  }
+
+  @override
+  Future<Either<Failure, List<Product>>> searchProducts(String query) async {
+    try {
+      final products = await remoteDataSource.getProducts();
+      final filteredProducts = products.where((product) {
+        final nameLower = product.name!.toLowerCase();
+        final skuLower = product.sku!.toLowerCase();
+        final descriptionLower = product.description!.toLowerCase();
+        final searchLower = query.toLowerCase();
+        return nameLower.contains(searchLower) ||
+            skuLower.contains(searchLower) ||
+            descriptionLower.contains(searchLower);
+      }).toList();
+      return Right(filteredProducts);
+    } catch (e) {
+      return Left(ServerFailure('Failed'));
     }
   }
 }

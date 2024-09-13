@@ -2,6 +2,7 @@ import 'package:bloc_test/bloc_test.dart';
 import 'package:brik_test_app/data/failure.dart';
 import 'package:brik_test_app/domain/usecases/add_product.dart';
 import 'package:brik_test_app/domain/usecases/delete_product.dart';
+import 'package:brik_test_app/domain/usecases/search_product.dart';
 import 'package:brik_test_app/domain/usecases/update_product.dart';
 import 'package:brik_test_app/presentation/bloc/product_bloc.dart';
 import 'package:mocktail/mocktail.dart';
@@ -22,11 +23,11 @@ void main() {
   setUp(() {
     mockProductRepository = MockProductRepository();
     productBloc = ProductBloc(
-      getProducts: GetProducts(mockProductRepository),
-      addProduct: AddProduct(mockProductRepository),
-      updateProduct: UpdateProduct(mockProductRepository),
-      deleteProduct: DeleteProduct(mockProductRepository),
-    );
+        getProducts: GetProducts(mockProductRepository),
+        addProduct: AddProduct(mockProductRepository),
+        updateProduct: UpdateProduct(mockProductRepository),
+        deleteProduct: DeleteProduct(mockProductRepository),
+        searchProduct: SearchProducts(mockProductRepository));
   });
 
   tearDown(() {
@@ -38,18 +39,19 @@ void main() {
     'emits [ProductLoading, ProductLoaded] when LoadProducts is added and products are fetched successfully',
     build: () {
       // Set up mock behavior
-      when(() => mockProductRepository.getProducts()).thenAnswer((_) async =>
-          Right([Product(id: 'aksd87asdh', name: 'Test Product', harga: 100)]));
+      when(() => mockProductRepository.getProducts(1, 5)).thenAnswer(
+          (_) async => Right(
+              [Product(id: 'aksd87asdh', name: 'Test Product', harga: 100)]));
       return productBloc;
     },
-    act: (bloc) => bloc.add(ProductsLoadEvent()),
+    act: (bloc) => bloc.add(ProductsLoadEvent(page: 1, pageSize: 5)),
     expect: () => [
       ProductLoading(),
       ProductHasData(
           [Product(id: 'aksd87asdh', name: 'Test Product', harga: 100)])
     ],
     verify: (_) {
-      verify(() => mockProductRepository.getProducts()).called(1);
+      verify(() => mockProductRepository.getProducts(1, 5)).called(1);
     },
   );
 
@@ -58,14 +60,14 @@ void main() {
     'emits [ProductLoading, ProductError] when LoadProducts fails',
     build: () {
       // Set up mock behavior to return failure
-      when(() => mockProductRepository.getProducts()).thenAnswer(
+      when(() => mockProductRepository.getProducts(1, 5)).thenAnswer(
           (_) async => Left(ServerFailure('Failed to fetch products')));
       return productBloc;
     },
-    act: (bloc) => bloc.add(ProductsLoadEvent()),
+    act: (bloc) => bloc.add(ProductsLoadEvent(page: 1, pageSize: 5)),
     expect: () => [ProductLoading(), ProductError('Failed to fetch products')],
     verify: (_) {
-      verify(() => mockProductRepository.getProducts()).called(1);
+      verify(() => mockProductRepository.getProducts(1, 5)).called(1);
     },
   );
 }
